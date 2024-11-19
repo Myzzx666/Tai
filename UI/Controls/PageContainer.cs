@@ -141,7 +141,7 @@ namespace UI.Controls
             NavigationCommands.BrowseForward.InputGestures.Clear();
             PageCache = new Dictionary<string, PageModel>();
 
-            CreateAnimations();
+            CreateAnimations(); //构建动态WPF动画Animation实例
         }
 
 
