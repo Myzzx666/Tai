@@ -113,7 +113,7 @@ namespace Core.Servicers.Instances
             _configProcessRegexWhiteList = new List<string>();
 
             sleepdiscover.SleepStatusChanged += Sleepdiscover_SleepStatusChanged;
-            appConfig.ConfigChanged += AppConfig_ConfigChanged;
+            appConfig.ConfigChanged += AppConfig_ConfigChanged; //配置数据变更
             _appTimer.OnAppDurationUpdated += _appTimer_OnAppDurationUpdated;
             WebSocketEvent.OnWebLog += WebSocketEvent_OnWebLog;
         }

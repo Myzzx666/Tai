@@ -19,7 +19,7 @@ namespace Core.Servicers.Instances
         private string fileName;
         private ConfigModel config;
 
-        public event AppConfigEventHandler ConfigChanged;
+        public event AppConfigEventHandler ConfigChanged; //App配置变更事件
         private ConfigModel oldConfig;
 
         public AppConfig()
