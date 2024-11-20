@@ -5,21 +5,57 @@ using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using UI.Controls.Button;
+using UI.Controls.Input;
 
 namespace UI.Controls.Window
 {
     public class DefaultWindow : System.Windows.Window
     {
         #region 1.依赖属性
+        #region Dialog
+        public static readonly DependencyProperty DialogTitleProperty = DependencyProperty.Register("DialogTitle", typeof(string), typeof(DefaultWindow));
+        /// <summary>
+        /// Dialog title
+        /// </summary>
+        public string DialogTitle
+        {
+            get { return (string)GetValue(DialogTitleProperty); }
+            set { SetValue(DialogTitleProperty, value); }
+        }
+
+        public static readonly DependencyProperty DialogMessageProperty = DependencyProperty.Register("DialogMessage", typeof(string), typeof(DefaultWindow));
+        /// <summary>
+        /// Dialog message
+        /// </summary>
+        public string DialogMessage
+        {
+            get { return (string)GetValue(DialogMessageProperty); }
+            set { SetValue(DialogMessageProperty, value); }
+        }
+        #endregion
+        #region InputModal
+        public static readonly DependencyProperty InputModalValueProperty = DependencyProperty.Register("InputModalValue", typeof(string), typeof(DefaultWindow));
+        /// <summary>
+        /// Dialog title
+        /// </summary>
+        public string InputModalValue
+        {
+            get { return (string)GetValue(InputModalValueProperty); }
+            set { SetValue(InputModalValueProperty, value); }
+        }
+        #endregion
         public static readonly DependencyProperty IsShowToastDeproperty = DependencyProperty.Register("IsShowToast", typeof(bool), typeof(DefaultWindow), new PropertyMetadata(false, new PropertyChangedCallback(OnIsShowToastChanged)));
         public bool IsShowToast { get { return (bool)GetValue(IsShowToastDeproperty); } set { SetValue(IsShowToastDeproperty, value); } }
         private static void OnIsShowToastChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -186,9 +222,15 @@ namespace UI.Controls.Window
         /// </summary>
         public bool IsWindowClosed { get { return IsWindowClosed_; } }
 
-        private Border ToastBorder, Masklayer;
+        private Border ToastBorder, Masklayer, DialogBorder, InputModalBorder;
         private Grid ToastGrid;
         private DispatcherTimer toastTimer;
+        private bool IsDialogConfirm;
+        private bool IsShowConfirmDialog, IsShowInputModal;
+        private Button.Button CancelBtn, ConfirmBtn, InputModalCancelBtn, InputModalConfirmBtn;
+        private InputBox InputModalInputBox;
+        private string InputValue;
+        private Func<string, bool> InputModalValidFnc;
         #region 3.初始化
         public DefaultWindow()
         {
@@ -277,6 +319,13 @@ namespace UI.Controls.Window
             ToastBorder = GetTemplateChild("ToastBorder") as Border;
             Masklayer = GetTemplateChild("Masklayer") as Border;
             ToastGrid = GetTemplateChild("ToastGrid") as Grid;
+            DialogBorder = GetTemplateChild("DialogBorder") as Border;
+            CancelBtn = GetTemplateChild("CancelBtn") as Button.Button;
+            ConfirmBtn = GetTemplateChild("ConfirmBtn") as Button.Button;
+            InputModalBorder = GetTemplateChild("InputModalBorder") as Border;
+            InputModalCancelBtn = GetTemplateChild("InputModalCancelBtn") as Button.Button;
+            InputModalConfirmBtn = GetTemplateChild("InputModalConfirmBtn") as Button.Button;
+            InputModalInputBox = GetTemplateChild("InputModalInputBox") as InputBox;
 
             if (PageContainer != null)
             {
@@ -289,6 +338,54 @@ namespace UI.Controls.Window
                 {
                     VisualStateManager.GoToState(this, "Normal", true);
                 }
+            }
+
+            if (CancelBtn != null)
+            {
+                CancelBtn.Click += (e, c) =>
+                {
+                    IsDialogConfirm = false;
+                    HideDialog();
+                };
+            }
+
+            if (ConfirmBtn != null)
+            {
+                ConfirmBtn.Click += (e, c) =>
+                {
+                    IsDialogConfirm = true;
+                    HideDialog();
+                };
+            }
+
+            if (InputModalCancelBtn != null)
+            {
+                InputModalCancelBtn.Click += (e, c) =>
+                {
+                    IsDialogConfirm = false;
+                    HideInputModal();
+                };
+            }
+
+            if (InputModalConfirmBtn != null)
+            {
+                InputModalConfirmBtn.Click += (e, c) =>
+                {
+                    if (InputModalValidFnc != null && !InputModalValidFnc(InputValue))
+                    {
+                        return;
+                    }
+                    IsDialogConfirm = true;
+                    HideInputModal();
+                };
+            }
+
+            if (InputModalInputBox != null)
+            {
+                InputModalInputBox.TextChanged += (e, c) =>
+                {
+                    InputValue = InputModalInputBox.Text;
+                };
             }
         }
 
@@ -352,7 +449,12 @@ namespace UI.Controls.Window
         private void ShowToast()
         {
             ToastGrid.Visibility = Visibility.Visible;
-
+            DialogBorder.Visibility = Visibility.Collapsed;
+            if (!IsShowInputModal)
+            {
+                InputModalBorder.Visibility = Visibility.Collapsed;
+            }
+            ToastBorder.Visibility = Visibility.Visible;
             Storyboard storyboard = new Storyboard();
 
             DoubleAnimation scrollAnimation = new DoubleAnimation();
@@ -376,7 +478,10 @@ namespace UI.Controls.Window
                 ToastGrid.MouseLeftButtonDown += ToastGrid_MouseLeftButtonDown;
             };
             storyboard.Children.Add(scrollAnimation);
-            storyboard.Children.Add(opacityAnimation);
+            if (!IsShowInputModal)
+            {
+                storyboard.Children.Add(opacityAnimation);
+            }
             storyboard.Begin();
         }
 
@@ -407,13 +512,181 @@ namespace UI.Controls.Window
             opacityAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.25));
 
             storyboard.Children.Add(scrollAnimation);
+            if (!IsShowInputModal)
+            {
+                storyboard.Children.Add(opacityAnimation);
+                storyboard.Completed += (e, c) =>
+                {
+                    ToastGrid.Visibility = Visibility.Collapsed;
+                };
+            }
+
+            storyboard.Begin();
+        }
+
+
+        #region Dialog
+        public Task<bool> ShowConfirmDialogAsync(string title_, string message_)
+        {
+            IsShowConfirmDialog = true;
+            ToastGrid.Visibility = Visibility.Visible;
+            ToastBorder.Visibility = Visibility.Collapsed;
+            DialogBorder.Visibility = Visibility.Visible;
+            InputModalBorder.Visibility = Visibility.Collapsed;
+
+            DialogMessage = message_;
+            DialogTitle = title_;
+
+            Storyboard storyboard = new Storyboard();
+
+            DoubleAnimation scrollAnimation = new DoubleAnimation();
+            scrollAnimation.From = -150;
+            scrollAnimation.To = 10;
+
+            scrollAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(scrollAnimation, DialogBorder);
+            Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("RenderTransform.Children[0].Y"));
+            scrollAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.15));
+
+            DoubleAnimation opacityAnimation = new DoubleAnimation();
+            opacityAnimation.To = 0.6;
+            opacityAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(opacityAnimation, Masklayer);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+            opacityAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.15));
+            storyboard.Children.Add(scrollAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Begin();
+
+            return Task.Run(() =>
+             {
+
+                 while (IsShowConfirmDialog)
+                 {
+                     Thread.Sleep(10);
+                 }
+
+                 return IsDialogConfirm;
+             });
+        }
+        private void HideDialog()
+        {
+            Storyboard storyboard = new Storyboard();
+
+            DoubleAnimation scrollAnimation = new DoubleAnimation();
+            scrollAnimation.To = -150;
+
+            scrollAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(scrollAnimation, DialogBorder);
+            Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("RenderTransform.Children[0].Y"));
+            scrollAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.12));
+
+            DoubleAnimation opacityAnimation = new DoubleAnimation();
+            opacityAnimation.To = 0;
+            opacityAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(opacityAnimation, Masklayer);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+            opacityAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.15));
+
+            storyboard.Children.Add(scrollAnimation);
             storyboard.Children.Add(opacityAnimation);
             storyboard.Completed += (e, c) =>
             {
                 ToastGrid.Visibility = Visibility.Collapsed;
+                IsShowConfirmDialog = false;
             };
             storyboard.Begin();
         }
+        #endregion
+
+        #region InputModal
+        public Task<string> ShowInputModalAsync(string title_, string message_, string value_, Func<string, bool> validFnc_)
+        {
+            IsShowInputModal = true;
+            ToastGrid.Visibility = Visibility.Visible;
+            ToastBorder.Visibility = Visibility.Collapsed;
+            DialogBorder.Visibility = Visibility.Collapsed;
+            InputModalBorder.Visibility = Visibility.Visible;
+
+            DialogMessage = message_;
+            DialogTitle = title_;
+            InputModalValue = value_;
+            InputModalValidFnc = validFnc_;
+
+            InputModalInputBox.Text = InputModalValue;
+
+            Storyboard storyboard = new Storyboard();
+
+            DoubleAnimation scrollAnimation = new DoubleAnimation();
+            scrollAnimation.From = -150;
+            scrollAnimation.To = 10;
+
+            scrollAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(scrollAnimation, InputModalBorder);
+            Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("RenderTransform.Children[0].Y"));
+            scrollAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.15));
+
+            DoubleAnimation opacityAnimation = new DoubleAnimation();
+            opacityAnimation.To = 0.6;
+            opacityAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(opacityAnimation, Masklayer);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+            opacityAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.15));
+            storyboard.Children.Add(scrollAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Completed += (e, c) =>
+            {
+                InputModalInputBox.Focus();
+            };
+            storyboard.Begin();
+
+            return Task.Run(() =>
+            {
+
+                while (IsShowInputModal)
+                {
+                    Thread.Sleep(10);
+                }
+
+                if (IsDialogConfirm)
+                {
+                    return InputValue;
+                }
+                else
+                {
+                    throw new Exception("Input cancel");
+                }
+            });
+        }
+        private void HideInputModal()
+        {
+            Storyboard storyboard = new Storyboard();
+
+            DoubleAnimation scrollAnimation = new DoubleAnimation();
+            scrollAnimation.To = -150;
+
+            scrollAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(scrollAnimation, InputModalBorder);
+            Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("RenderTransform.Children[0].Y"));
+            scrollAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.12));
+
+            DoubleAnimation opacityAnimation = new DoubleAnimation();
+            opacityAnimation.To = 0;
+            opacityAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
+            Storyboard.SetTarget(opacityAnimation, Masklayer);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath("Opacity"));
+            opacityAnimation.Duration = new Duration(TimeSpan.FromSeconds(0.15));
+
+            storyboard.Children.Add(scrollAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Completed += (e, c) =>
+            {
+                ToastGrid.Visibility = Visibility.Collapsed;
+                IsShowInputModal = false;
+            };
+            storyboard.Begin();
+        }
+        #endregion
 
         #region 6.事件
 

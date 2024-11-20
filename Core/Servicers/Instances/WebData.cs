@@ -5,12 +5,16 @@ using Core.Models.Data;
 using Core.Models.Db;
 using Core.Models.WebPage;
 using Core.Servicers.Interfaces;
+using CsvHelper;
 using Newtonsoft.Json;
+using Npoi.Mapper;
 using NPOI.SS.Formula.Functions;
 using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -240,6 +244,14 @@ namespace Core.Servicers.Instances
                     });
                     db.SaveChanges();
                 }
+                else
+                {
+                    if (result.Title != site_.Title)
+                    {
+                        result.Title = site_.Title;
+                        db.SaveChanges();
+                    }
+                }
                 return result;
 
             }
@@ -266,11 +278,12 @@ namespace Core.Servicers.Instances
               .GroupBy(m => m.SiteId)
               .Select(s => new
               {
-                  Title = s.FirstOrDefault().Site.Title,
-                  Domain = s.FirstOrDefault().Site.Domain,
-                  CategoryID = s.FirstOrDefault().Site.CategoryID,
-                  IconFile = s.FirstOrDefault().Site.IconFile,
-                  ID = s.FirstOrDefault().Site.ID,
+                  //Title = s.FirstOrDefault().Site.Title,
+                  //Domain = s.FirstOrDefault().Site.Domain,
+                  //CategoryID = s.FirstOrDefault().Site.CategoryID,
+                  //IconFile = s.FirstOrDefault().Site.IconFile,
+                  //ID = s.FirstOrDefault().Site.ID,
+                  Site = s.FirstOrDefault().Site,
                   Duration = s.Sum(m => m.Duration),
               });
 
@@ -290,7 +303,18 @@ namespace Core.Servicers.Instances
                 {
                     data = data.OrderByDescending(m => m.Duration);
                 }
-                var result = JsonConvert.DeserializeObject<List<WebSiteModel>>(JsonConvert.SerializeObject(data.ToList()));
+                var list = data.Select(s => new
+                {
+                    Alias = s.Site.Alias,
+                    Title = s.Site.Title,
+                    Domain = s.Site.Domain,
+                    CategoryID = s.Site.CategoryID,
+                    IconFile = s.Site.IconFile,
+                    ID = s.Site.ID,
+                    Duration = s.Duration,
+                }).ToList();
+
+                var result = JsonConvert.DeserializeObject<List<WebSiteModel>>(JsonConvert.SerializeObject(list));
                 return result;
             }
         }
@@ -765,6 +789,7 @@ namespace Core.Servicers.Instances
                     IconFile = s.FirstOrDefault().Site.IconFile,
                     CategoryID = s.FirstOrDefault().Site.CategoryID,
                     Category = s.FirstOrDefault().Category,
+                    Alias = s.FirstOrDefault().Site.Alias,
                 }).ToList();
 
                 //var result = query.Select(s => new WebSiteModel
@@ -780,6 +805,72 @@ namespace Core.Servicers.Instances
                 //return result;
                 //return query;
                 return result;
+            }
+        }
+
+        public void Clear(int siteId_)
+        {
+            using (var db = _database.GetReaderContext())
+            {
+                db.Database.ExecuteSqlCommand("delete from WebBrowseLogModels  where SiteId = " + siteId_);
+                db.Database.ExecuteSqlCommand("update WebSiteModels set Duration = 0  where ID = " + siteId_);
+            }
+        }
+
+        public void Export(string dir_, DateTime start_, DateTime end_)
+        {
+            start_ = new DateTime(start_.Year, start_.Month, 1, 0, 0, 0);
+            end_ = new DateTime(end_.Year, end_.Month, DateTime.DaysInMonth(end_.Year, end_.Month), 23, 59, 59);
+
+            using (var db = _database.GetReaderContext())
+            {
+                var webSiteData = db.WebBrowserLogs.Where(m => m.LogTime >= start_ && m.LogTime <= end_)
+                    .ToList()
+                    .Select(m => new
+                    {
+                        时间 = m.LogTime,
+                        标题 = m.Url.Title,
+                        网址 = m.Url.Url,
+                        时长 = m.Duration,
+                    });
+
+
+                var mapper = new Mapper();
+                mapper.Put(webSiteData, "浏览记录");
+
+                string name = $"Tai网页统计数据({start_.ToString("yyyy年MM月")}-{end_.ToString("yyyy年MM月")})";
+                if (start_.Year == end_.Year && start_.Month == end_.Month)
+                {
+                    name = $"Tai网页统计数据({start_.ToString("yyyy年MM月")})";
+                }
+                mapper.Save(Path.Combine(dir_, $"{name}.xlsx"));
+
+                //  导出csv
+                using (var writer = new StreamWriter(Path.Combine(dir_, $"{name}.csv"), false, System.Text.Encoding.UTF8))
+                using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                {
+                    csv.WriteRecords(webSiteData);
+                }
+            }
+        }
+
+        public WebSiteModel Update(WebSiteModel website_)
+        {
+            using (var db = _database.GetWriterContext())
+            {
+                var website = db.WebSites.FirstOrDefault(m => m.ID == website_.ID);
+                if (website != null)
+                {
+                    website.Alias = website_.Alias;
+                    website.Domain = website_.Domain;
+                    website.Title = website_.Title;
+                    db.SaveChanges();
+                    _database.CloseWriter();
+                }
+                return website;
+                //string sql = $"update WebSiteModels set CategoryID={categoryId_} where ID in ({string.Join(",", siteIds_)})";
+                //db.Database.ExecuteSqlCommand(sql);
+                //db.SaveChanges();
             }
         }
     }

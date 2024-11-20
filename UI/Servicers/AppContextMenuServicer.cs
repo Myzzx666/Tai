@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using UI.Controls.Charts.Model;
@@ -22,19 +23,28 @@ namespace UI.Servicers
         private readonly IAppData appData;
         private readonly IAppConfig appConfig;
         private readonly IThemeServicer theme;
+        private readonly IUIServicer _uIServicer;
         private ContextMenu menu;
         private MenuItem setCategory;
         private MenuItem setLink;
         MenuItem block = new MenuItem();
+        MenuItem _whiteList = new MenuItem();
 
 
-        public AppContextMenuServicer(MainViewModel main, ICategorys categorys, IAppData appData, IAppConfig appConfig, IThemeServicer theme)
+        public AppContextMenuServicer(
+            MainViewModel main,
+            ICategorys categorys,
+            IAppData appData,
+            IAppConfig appConfig,
+            IThemeServicer theme,
+            IUIServicer uIServicer_)
         {
             this.main = main;
             this.categorys = categorys;
             this.appData = appData;
             this.appConfig = appConfig;
             this.theme = theme;
+            this._uIServicer = uIServicer_;
 
         }
 
@@ -64,25 +74,93 @@ namespace UI.Servicers
             setCategory = new MenuItem();
             setCategory.Header = "设置分类";
 
+            MenuItem editAlias = new MenuItem();
+            editAlias.Header = "编辑别名";
+            editAlias.Click += EditAlias_ClickAsync;
+
             setLink = new MenuItem();
             setLink.Header = "添加关联";
 
             block.Header = "忽略此应用";
             block.Click += Block_Click;
 
+            _whiteList.Header = "添加到白名单";
+            _whiteList.Click += _whiteList_Click;
+
             menu.Items.Add(run);
             menu.Items.Add(new Separator());
             menu.Items.Add(setCategory);
             menu.Items.Add(setLink);
+            menu.Items.Add(editAlias);
             menu.Items.Add(new Separator());
 
             menu.Items.Add(openDir);
             menu.Items.Add(block);
+            menu.Items.Add(_whiteList);
 
             menu.ContextMenuOpening += SetCategory_ContextMenuOpening;
         }
 
-      
+        private async void EditAlias_ClickAsync(object sender, RoutedEventArgs e)
+        {
+            var data = menu.Tag as ChartsDataModel;
+            var log = data.Data as DailyLogModel;
+            var app = log != null ? log.AppModel : null;
+
+            if (log == null)
+            {
+                app = (data.Data as HoursLogModel).AppModel;
+            }
+
+            try
+            {
+                string input = await _uIServicer.ShowInputModalAsync("修改别名", "请输入别名", app.Alias, (val) =>
+                 {
+                     if (val.Length > 15)
+                     {
+                         main.Error("别名最大长度为15位字符");
+                         return false;
+                     }
+                     return true;
+                 });
+
+                //  开始更新别名
+                var editApp = appData.GetApp(app.ID);
+                editApp.Alias = input;
+                appData.UpdateApp(editApp);
+                data.Name = string.IsNullOrEmpty(input) ? editApp.Description : input;
+
+                main.Success("别名已更新");
+                Debug.WriteLine("输入内容：" + input);
+            }
+            catch
+            {
+                //  输入取消，无需处理异常
+            }
+        }
+
+        private void _whiteList_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            var data = menu.Tag as ChartsDataModel;
+            var log = data.Data as DailyLogModel;
+            var app = log != null ? log.AppModel : null;
+
+            if (log == null)
+            {
+                app = (data.Data as HoursLogModel).AppModel;
+            }
+            var config = appConfig.GetConfig();
+            if (config.Behavior.ProcessWhiteList.Contains(app.Name))
+            {
+                config.Behavior.ProcessWhiteList.Remove(app.Name);
+                main.Toast($"已从白名单移除此应用 {app.Description}", Controls.Window.ToastType.Success);
+            }
+            else
+            {
+                config.Behavior.ProcessWhiteList.Add(app.Name);
+                main.Toast($"已添加至白名单 {app.Description}", Controls.Window.ToastType.Success);
+            }
+        }
 
         private void Theme_OnThemeChanged(object sender, EventArgs e)
         {
@@ -148,6 +226,15 @@ namespace UI.Servicers
                 block.Header = "忽略此应用";
             }
 
+            if (config.Behavior.ProcessWhiteList.Contains(app.Name))
+            {
+                _whiteList.Header = "从白名单移除";
+            }
+            else
+            {
+                _whiteList.Header = "添加到白名单";
+            }
+
             UpdateCategory();
 
             setLink.IsEnabled = config.Links.Count > 0;
@@ -179,6 +266,8 @@ namespace UI.Servicers
                 };
                 setCategory.Items.Add(categoryMenu);
             }
+
+            setCategory.IsEnabled = setCategory.Items.Count > 0;
 
         }
 
