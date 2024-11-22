@@ -260,7 +260,7 @@ namespace UI.Controls.SettingPanel
             var textBox = new InputBox();
             textBox.Text = value;
             textBox.Placeholder = attribute.Name;
-            textBox.Width = 125;
+            textBox.Width = 125; //固定宽度
             textBox.TextChanged += (e, c) =>
             {
                 textBox.Error = attribute.Name + (textBox.Text == String.Empty ? "不能为空" : "已存在");
