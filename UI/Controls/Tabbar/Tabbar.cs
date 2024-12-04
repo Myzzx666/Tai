@@ -74,7 +74,7 @@ namespace UI.Controls.Tabbar
         }
 
 
-
+        //应用模板时,添加渲染
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
