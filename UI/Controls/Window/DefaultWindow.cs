@@ -494,6 +494,7 @@ namespace UI.Controls.Window
 
         private void HideToast()
         {
+            //隐藏Toast对话框 Toast 执行动画
             Storyboard storyboard = new Storyboard();
 
             DoubleAnimation scrollAnimation = new DoubleAnimation();

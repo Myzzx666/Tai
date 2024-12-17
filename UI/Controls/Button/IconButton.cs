@@ -65,6 +65,7 @@ namespace UI.Controls.Button
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             base.OnMouseLeftButtonDown(e);
+            //当鼠标右键点击 Pressed状态
             VisualStateManager.GoToState(this, "Pressed", true);
         }
     }
