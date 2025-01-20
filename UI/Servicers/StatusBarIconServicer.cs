@@ -111,9 +111,13 @@ namespace UI.Servicers
             var exitMenuItem = new MenuItem();
             exitMenuItem.Header = "退出";
             exitMenuItem.Click += ExitMenuItem_Click;
+            var testMenuItem = new MenuItem();
+            testMenuItem.Header = "WPF Tai 测试";
 
+            //动态添加StatusBar MenuContext Item
             _contextMenu.Items.Add(mainWindowMenuItem);
             _contextMenu.Items.Add(exitMenuItem);
+            _contextMenu.Items.Add(testMenuItem);
 
         }
 
