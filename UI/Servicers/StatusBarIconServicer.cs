@@ -113,12 +113,18 @@ namespace UI.Servicers
             exitMenuItem.Click += ExitMenuItem_Click;
             var testMenuItem = new MenuItem();
             testMenuItem.Header = "WPF Tai 测试";
+            testMenuItem.Click += TestMenuItem_Click;
 
             //动态添加StatusBar MenuContext Item
             _contextMenu.Items.Add(mainWindowMenuItem);
             _contextMenu.Items.Add(exitMenuItem);
             _contextMenu.Items.Add(testMenuItem);
 
+        }
+
+        private async void TestMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            bool showFlag = await _uIServicer.ShowConfirmDialogAsync("WPF Tai MenuItem测试", "OK");
         }
 
         /// <summary>
