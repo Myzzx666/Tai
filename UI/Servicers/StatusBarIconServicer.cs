@@ -61,7 +61,7 @@ namespace UI.Servicers
         {
             InitMenu();
 
-            _statusBarIcon = new System.Windows.Forms.NotifyIcon();
+            _statusBarIcon = new System.Windows.Forms.NotifyIcon(); //使用的是WinForm带有的NotifyIcon系统托盘通知组件
             _statusBarIcon.Visible = true;
             _statusBarIcon.MouseClick += _statusBarIcon_MouseClick;
             _statusBarIcon.MouseDoubleClick += _statusBarIcon_MouseDoubleClick;
@@ -71,7 +71,7 @@ namespace UI.Servicers
             WatchStateAsync();
 
             _appObserver.OnAppActiveChanged += _appObserver_OnAppActiveChanged; ;
-            _themeServicer.OnThemeChanged += _themeServicer_OnThemeChanged;
+            _themeServicer.OnThemeChanged += _themeServicer_OnThemeChanged; // 主题切换
             Application.Current.DispatcherUnhandledException += Current_DispatcherUnhandledException;
         }
 
