@@ -35,7 +35,7 @@ namespace UI.ViewModels
             OnSelectedCommand = new Command(new Action<object>(OnSelectedCommandHandle));
             GotoPageCommand = new Command(new Action<object>(OnGotoPageCommand));
 
-
+            //绑定的导航菜单项
             Items = new System.Collections.ObjectModel.ObservableCollection<Controls.Navigation.Models.NavigationItemModel>();
 
             PropertyChanged += MainViewModel_PropertyChanged;

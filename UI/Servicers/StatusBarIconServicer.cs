@@ -61,14 +61,15 @@ namespace UI.Servicers
         {
             InitMenu();
 
-            _statusBarIcon = new System.Windows.Forms.NotifyIcon(); //使用的是WinForm带有的NotifyIcon系统托盘通知组件
+            _statusBarIcon = new System.Windows.Forms.NotifyIcon(); //使用的是WinForm带有的NotifyIcon系统托盘通知组件(动态添加组件)
             _statusBarIcon.Visible = true;
             _statusBarIcon.MouseClick += _statusBarIcon_MouseClick;
             _statusBarIcon.MouseDoubleClick += _statusBarIcon_MouseDoubleClick;
 
+            //设置Loading图标
             SetIcon(IconType.Busy);
 
-            WatchStateAsync();
+            WatchStateAsync(); //监控App应用状态(便于切换状态)
 
             _appObserver.OnAppActiveChanged += _appObserver_OnAppActiveChanged; ;
             _themeServicer.OnThemeChanged += _themeServicer_OnThemeChanged; // 主题切换
@@ -91,6 +92,7 @@ namespace UI.Servicers
         {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
             {
+                //打开上下文菜单(系统托盘)
                 _contextMenu.IsOpen = false;
             }));
         }
@@ -182,7 +184,7 @@ namespace UI.Servicers
             if (_mainWindow == null || _mainWindow.IsWindowClosed)
             {
                 _mainWindow = new MainWindow();
-                _mainWindow.DataContext = _mainVM;
+                _mainWindow.DataContext = _mainVM;  //后台进行DataContext MVVM绑定
                 _mainWindow.Loaded += _mainWindow_Loaded;
                 _mainVM.LoadDefaultPage();
             }
@@ -196,7 +198,7 @@ namespace UI.Servicers
             _mainWindow.Show();
             _mainWindow.Activate();
 
-            _uIServicer.InitWindow(_mainWindow);
+            _uIServicer.InitWindow(_mainWindow); //初始化Default Window
         }
 
         private void _mainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -209,6 +211,7 @@ namespace UI.Servicers
 
         private void ExitApp()
         {
+            //隐藏状态栏(系统图标)
             _statusBarIcon.Visible = false;
 
             Logger.Save(true);
@@ -216,11 +219,13 @@ namespace UI.Servicers
         }
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            //退出应用程序
             ExitApp();
         }
 
         private void MainWindowMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            //显示主窗体
             ShowMainWindow();
         }
 

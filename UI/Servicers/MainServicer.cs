@@ -31,7 +31,7 @@ namespace UI.Servicers
             this.inputServicer = inputServicer;
             this.appContextMenuServicer = appContextMenuServicer;
             _webSiteContext = webSiteContext_;
-            _statusBarIconServicer = statusBarIconServicer_;
+            _statusBarIconServicer = statusBarIconServicer_; //调用状态栏(系统托盘服务)
             _config = config_;
         }
         public void Start(bool isSelfStart)
