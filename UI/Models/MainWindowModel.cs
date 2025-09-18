@@ -37,6 +37,7 @@ namespace UI.Models
             set { Data_ = value; OnPropertyChanged(); }
         }
 
+        //导航项 ViewModel(集合)
         public ObservableCollection<NavigationItemModel> Items { get; set; }
 
         private double NavigationWidth_ = 220;

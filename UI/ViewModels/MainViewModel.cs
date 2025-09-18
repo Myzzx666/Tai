@@ -119,6 +119,15 @@ namespace UI.ViewModels
                 Uri = nameof(CategoryPage),
 
             });
+            //todo Function Navigation ViewPage
+            Items.Add(new Controls.Navigation.Models.NavigationItemModel()
+            {
+                UnSelectedIcon = Controls.Base.IconTypes.VPN,
+                SelectedIcon = IconTypes.IOT,
+                Title = "VPN",
+                ID = 4,
+                Uri = nameof(CategoryPage),
+            });
         }
 
         public void Toast(string content, ToastType type = ToastType.Info, IconTypes icon = IconTypes.Accept)
