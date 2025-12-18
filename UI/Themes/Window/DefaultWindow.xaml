@@ -114,6 +114,7 @@
                             Background="{DynamicResource WindowBackground}"
                             BorderBrush="{DynamicResource WindowBorderBrush}"
                             BorderThickness="1">
+                            <!--  装饰器  -->
                             <AdornerDecorator>
                                 <Grid x:Name="WindowContent">
 
