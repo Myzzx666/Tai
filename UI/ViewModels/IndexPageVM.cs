@@ -74,7 +74,7 @@ namespace UI.ViewModels
         {
             TabbarData = new System.Collections.ObjectModel.ObservableCollection<string>()
             {
-                "今日","本周"
+                "今日","本周","月度","季度", "年度"
             };
 
             TabbarSelectedIndex = 0;

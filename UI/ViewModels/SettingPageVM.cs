@@ -82,7 +82,7 @@ namespace UI.ViewModels
             }
             catch (Exception ex)
             {
-                CheckUpdateBtnVisibility = System.Windows.Visibility.Visible;
+                CheckUpdateBtnVisibility = System.Windows.Visibility.Visible; //设置为可见
 
                 Logger.Error(ex.Message);
                 mainVM.Toast("无法正确启动检查更新程序", Controls.Window.ToastType.Error, Controls.Base.IconTypes.None);
@@ -102,7 +102,7 @@ namespace UI.ViewModels
 
             TabbarData = new System.Collections.ObjectModel.ObservableCollection<string>()
             {
-                "常规","关联","行为","数据","关于"
+                "常规","关联","行为","数据", "测试", "关于"
             };
 
             PropertyChanged += SettingPageVM_PropertyChanged;

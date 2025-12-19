@@ -608,13 +608,17 @@ namespace UI.Controls.Charts
         {
             if (IsLoading)
             {
+                //加载中显示占位符
                 RenderLoadingPlaceholder();
             }
             else
             {
+                //显示数据
                 RenderData();
             }
         }
+
+        // 渲染加载中(Loading......)占位符
         private void RenderLoadingPlaceholder()
         {
             if (LoadingPlaceholderCount > 0 && CardContainer != null)
@@ -627,12 +631,12 @@ namespace UI.Controls.Charts
                     switch (ChartsType)
                     {
                         case ChartsType.List:
-                            var item = new ChartsItemTypeList();
+                            var item = new ChartsItemTypeList(); //ChartsItemTypeList Control控件
                             item.IsLoading = true;
                             _typeATempContainer.Children.Add(item);
                             break;
                         case ChartsType.Card:
-                            var card = new ChartsItemTypeCard();
+                            var card = new ChartsItemTypeCard(); //ChartsItemTypeCard Control控件
                             card.IsLoading = true;
                             CardContainer.Children.Add(card);
                             break;

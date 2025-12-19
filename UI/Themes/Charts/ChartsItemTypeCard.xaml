@@ -69,6 +69,7 @@
                             </Border>
                         </Border>
 
+                        <!--默认是隐藏的-->
                         <base:Placeholder x:Name="Loading" Visibility="Collapsed" CornerRadius="12"  Width="150" Height="150"/>
 
                         <VisualStateManager.VisualStateGroups>

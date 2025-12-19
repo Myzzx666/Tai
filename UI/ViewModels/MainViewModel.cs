@@ -19,7 +19,7 @@ namespace UI.ViewModels
         private readonly IAppConfig appConfig;
         public Command OnSelectedCommand { get; set; }
         public Command GotoPageCommand { get; set; }
-
+        //导航Page页面 Navigation Pages PageView'Name String
         private string[] pages = { nameof(IndexPage), nameof(ChartPage), nameof(DataPage), nameof(CategoryPage) };
         public MainViewModel(
             IServiceProvider serviceProvider,

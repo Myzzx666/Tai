@@ -119,6 +119,7 @@
             </TabItem>
             <TabItem>
                 <Grid>
+                    <!--显示Chart图表-->
                     <Charts:Charts Data="{Binding WebMoreData}" ClickCommand="{Binding ToDetailCommand}" ChartsType="Card" ShowLimit="{Binding MoreNum}" IsLoading="{Binding IsLoading,Mode=TwoWay}" ItemMenu="{Binding WebSiteContextMenu}"/>
                 </Grid>
             </TabItem>

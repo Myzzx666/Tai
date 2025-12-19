@@ -11,6 +11,9 @@ namespace UI.Controls.Base
 {
     public class Placeholder : Control
     {
+        /// <summary>
+        /// Placeholder圆角半径
+        /// </summary>
         public CornerRadius CornerRadius
         {
             get { return (CornerRadius)GetValue(CornerRadiusProperty); }
@@ -28,7 +31,7 @@ namespace UI.Controls.Base
         }
 
 
-
+        //应用模板
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
@@ -42,7 +45,7 @@ namespace UI.Controls.Base
         private void Placeholder_Loaded(object sender, RoutedEventArgs e)
         {
             Loaded -= Placeholder_Loaded;
-
+            //执行WPF故事板动画
             Animation();
         }
 
@@ -55,6 +58,7 @@ namespace UI.Controls.Base
 
             scrollAnimation.EasingFunction = new SineEase() { EasingMode = EasingMode.EaseIn };
             Storyboard.SetTarget(scrollAnimation, Flash);
+            //Control容器Panel平移动画
             Storyboard.SetTargetProperty(scrollAnimation, new PropertyPath("RenderTransform.Children[0].X"));
             scrollAnimation.AutoReverse = true;
             scrollAnimation.RepeatBehavior = RepeatBehavior.Forever;
